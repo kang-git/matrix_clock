@@ -5,12 +5,12 @@
 
 //定义Max7219接口
 #define Max7219_pinCLK 4
-#define Max7219_pinCS  3
+#define Max7219_pinCS  5
 #define Max7219_pinDIN 2
 //定义ds1302接口
-#define ce 5
-#define io 7
-#define clk 6
+#define ce 16
+#define io 10
+#define clk 9
 //定义温湿度传感器
 int pinDHT22 = 8;
 //SimpleDHT22 dht22(pinDHT22);
@@ -166,22 +166,22 @@ void Write_Max7219_4(uchar add4,uchar dat4)
 void Init_MAX7219(void)
 {
     Write_Max7219_1(0x09, 0x00);       //译码方式：BCD码
-    Write_Max7219_1(0x0a, 0x0f);       //亮度 
+    Write_Max7219_1(0x0a, 0x03);       //亮度 
     Write_Max7219_1(0x0b, 0x07);       //扫描界限；8个数码管显示
     Write_Max7219_1(0x0c, 0x01);       //掉电模式：0，普通模式：1
     Write_Max7219_1(0x0f, 0x00);       //显示测试：1；测试结束，正常显示：0
     Write_Max7219_2(0x09, 0x00);       //译码方式：BCD码
-    Write_Max7219_2(0x0a, 0x0f);       //亮度 
+    Write_Max7219_2(0x0a, 0x03);       //亮度 
     Write_Max7219_2(0x0b, 0x07);       //扫描界限；8个数码管显示
     Write_Max7219_2(0x0c, 0x01);       //掉电模式：0，普通模式：1
     Write_Max7219_2(0x0f, 0x00);       //显示测试：1；测试结束，正常显示：0
     Write_Max7219_3(0x09, 0x00);       //译码方式：BCD码
-    Write_Max7219_3(0x0a, 0x0f);       //亮度 
+    Write_Max7219_3(0x0a, 0x03);       //亮度 
     Write_Max7219_3(0x0b, 0x07);       //扫描界限；8个数码管显示
     Write_Max7219_3(0x0c, 0x01);       //掉电模式：0，普通模式：1
     Write_Max7219_3(0x0f, 0x00);       //显示测试：1；测试结束，正常显示：0
     Write_Max7219_4(0x09, 0x00);       //译码方式：BCD码
-    Write_Max7219_4(0x0a, 0x0f);       //亮度 
+    Write_Max7219_4(0x0a, 0x03);       //亮度 
     Write_Max7219_4(0x0b, 0x07);       //扫描界限；8个数码管显示
     Write_Max7219_4(0x0c, 0x01);       //掉电模式：0，普通模式：1
     Write_Max7219_4(0x0f, 0x00);       //显示测试：1；测试结束，正常显示：0
@@ -592,6 +592,7 @@ void display_ds1302time()
  //硬件初始化
 void setup()
 {
+    Serial.begin(9600);
     //max7219初始化
     pinMode(Max7219_pinCS, OUTPUT);
     pinMode(Max7219_pinCLK, OUTPUT);
@@ -603,6 +604,10 @@ void setup()
     Init_MAX7219();
     //DS1302及时间map初始化
     //ds1302_initial();
+    time_table[1][11] = 1;
+    time_table[2][11] = 1;
+    time_table[4][11] = 1;
+    time_table[5][11] = 1;
 }
 
 /******************************************主程序******************************************/
@@ -612,6 +617,7 @@ void loop()
     uchar hour_1, hour_2, min_1, min_2, sec_1, sec_2;
     uchar old_hour_1, old_hour_2, old_min_1, old_min_2, old_sec_1, old_sec_2; 
     read_1302_time();
+    display_ds1302time();
     old_hour_1 = tim[8];
     old_hour_2 = tim[9];
     old_min_1 = tim[10];
@@ -624,10 +630,6 @@ void loop()
     make_table_m2(old_min_2);
     make_table_s1(old_sec_1);
     make_table_s2(old_sec_2);
-    time_table[1][11] = 1;
-    time_table[2][11] = 1;
-    time_table[4][11] = 1;
-    time_table[5][11] = 1;
     transform();
     for (size_t i = 1; i < 9; i++)
     {

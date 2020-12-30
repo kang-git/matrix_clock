@@ -5,9 +5,9 @@ unsigned char tim_bcd[7];
 unsigned char tim[14];
 
 
-#define ce 2
-#define io 3
-#define clk 4
+#define ce 5
+#define io 9
+#define clk 10
 
 
 //上升沿写入8位数据函数
@@ -156,8 +156,9 @@ void setup()
 {
     pinMode(clk,OUTPUT);
     pinMode(ce,OUTPUT);
+    pinMode(io,INPUT);
     Serial.begin(9600);
-    //ds1302_initial();
+    ds1302_initial();
 }
 
 void loop()
