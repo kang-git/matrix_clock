@@ -1,13 +1,13 @@
 unsigned char add_write[] = {0x8C,0x8A,0x88,0x86,0x84,0x82,0x80};//年星月日时分秒
 unsigned char add_read[] = {0x8D,0x8B,0x89,0x87,0x85,0x83,0x81};
-unsigned char tim0[] = {20,6,12,5,22,34,0};
+unsigned char tim0[] = {20,6,12,31,14,30,0};
 unsigned char tim_bcd[7];
 unsigned char tim[14];
 
 
-#define ce 5
-#define io 9
-#define clk 10
+#define ce 2
+#define io 0
+#define clk 4
 
 
 //上升沿写入8位数据函数

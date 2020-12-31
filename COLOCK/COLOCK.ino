@@ -5,12 +5,12 @@
 
 //定义Max7219接口
 #define Max7219_pinCLK 4
-#define Max7219_pinCS  5
+#define Max7219_pinCS  3
 #define Max7219_pinDIN 2
 //定义ds1302接口
-#define ce 16
-#define io 10
-#define clk 9
+#define ce 5
+#define io 6
+#define clk 7
 //定义温湿度传感器
 int pinDHT22 = 8;
 //SimpleDHT22 dht22(pinDHT22);
@@ -166,22 +166,22 @@ void Write_Max7219_4(uchar add4,uchar dat4)
 void Init_MAX7219(void)
 {
     Write_Max7219_1(0x09, 0x00);       //译码方式：BCD码
-    Write_Max7219_1(0x0a, 0x03);       //亮度 
+    Write_Max7219_1(0x0a, 0x01);       //亮度 
     Write_Max7219_1(0x0b, 0x07);       //扫描界限；8个数码管显示
     Write_Max7219_1(0x0c, 0x01);       //掉电模式：0，普通模式：1
     Write_Max7219_1(0x0f, 0x00);       //显示测试：1；测试结束，正常显示：0
     Write_Max7219_2(0x09, 0x00);       //译码方式：BCD码
-    Write_Max7219_2(0x0a, 0x03);       //亮度 
+    Write_Max7219_2(0x0a, 0x01);       //亮度 
     Write_Max7219_2(0x0b, 0x07);       //扫描界限；8个数码管显示
     Write_Max7219_2(0x0c, 0x01);       //掉电模式：0，普通模式：1
     Write_Max7219_2(0x0f, 0x00);       //显示测试：1；测试结束，正常显示：0
     Write_Max7219_3(0x09, 0x00);       //译码方式：BCD码
-    Write_Max7219_3(0x0a, 0x03);       //亮度 
+    Write_Max7219_3(0x0a, 0x01);       //亮度 
     Write_Max7219_3(0x0b, 0x07);       //扫描界限；8个数码管显示
     Write_Max7219_3(0x0c, 0x01);       //掉电模式：0，普通模式：1
     Write_Max7219_3(0x0f, 0x00);       //显示测试：1；测试结束，正常显示：0
     Write_Max7219_4(0x09, 0x00);       //译码方式：BCD码
-    Write_Max7219_4(0x0a, 0x03);       //亮度 
+    Write_Max7219_4(0x0a, 0x01);       //亮度 
     Write_Max7219_4(0x0b, 0x07);       //扫描界限；8个数码管显示
     Write_Max7219_4(0x0c, 0x01);       //掉电模式：0，普通模式：1
     Write_Max7219_4(0x0f, 0x00);       //显示测试：1；测试结束，正常显示：0
@@ -634,7 +634,7 @@ void loop()
     for (size_t i = 1; i < 9; i++)
     {
         Write_Max7219_1(i, max7219_4[i-1]);
-        Write_Max7219_2(i, max7219_3[i-1]);
+        Write_Max7219_2(i, 0x00);
         Write_Max7219_3(i, max7219_2[i-1]);
         Write_Max7219_4(i, max7219_1[i-1]);
     }
