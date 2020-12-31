@@ -119,31 +119,41 @@ void Write_Max7219_byte(uchar DATA)
 void Write_Max7219_1(uchar add1,uchar dat1)
 { 
     digitalWrite(Max7219_pinCS, LOW);
-    Write_Max7219_byte(add1);           //写入地址，即数码管编号
-    Write_Max7219_byte(dat1);               //写入数据，即数码管显示数字 
+    Write_Max7219_byte(0x00); //片4写入空
+    Write_Max7219_byte(0x00);
+    Write_Max7219_byte(0x00); //片3写入空
+    Write_Max7219_byte(0x00);
+    Write_Max7219_byte(0x00); //片2写入空
+    Write_Max7219_byte(0x00);
+    Write_Max7219_byte(add1); //片1写入地址，即数码管编号
+    Write_Max7219_byte(dat1); //片1写入数据，即数码管显示数字
     digitalWrite(Max7219_pinCS, HIGH);                      
 }
 /*第二片MAX7219的写入数据*/
 void Write_Max7219_2(uchar add2,uchar dat2)
 {
     digitalWrite(Max7219_pinCS, LOW);
-    Write_Max7219_byte(add2);
-    Write_Max7219_byte(dat2);
-    digitalWrite(Max7219_pinCLK, HIGH);
+    Write_Max7219_byte(0x00); //片4写入空
+    Write_Max7219_byte(0x00);
+    Write_Max7219_byte(0x00); //片3写入空
+    Write_Max7219_byte(0x00);
+    Write_Max7219_byte(add2); //片2写入地址
+    Write_Max7219_byte(dat2); //片2写入数据
     Write_Max7219_byte(0x00);  //片1写入空
     Write_Max7219_byte(0x00);
-    digitalWrite(Max7219_pinCLK, HIGH);
+    digitalWrite(Max7219_pinCS, HIGH);
 }
 /*第三片MAX7219的写入数据*/
 void Write_Max7219_3(uchar add3,uchar dat3)
 {
     digitalWrite(Max7219_pinCS, LOW);
-    Write_Max7219_byte(add3);
-    Write_Max7219_byte(dat3);
-    digitalWrite(Max7219_pinCLK, HIGH);
-    Write_Max7219_byte(0x00); //片1写入空
+    Write_Max7219_byte(0x00); //片4写入空
     Write_Max7219_byte(0x00);
+    Write_Max7219_byte(add3); //片3写入地址
+    Write_Max7219_byte(dat3); //片3写入数据
     Write_Max7219_byte(0x00); //片2写入空
+    Write_Max7219_byte(0x00);
+    Write_Max7219_byte(0x00); //片1写入空
     Write_Max7219_byte(0x00);
     digitalWrite(Max7219_pinCS, HIGH);
 }
@@ -151,14 +161,13 @@ void Write_Max7219_3(uchar add3,uchar dat3)
 void Write_Max7219_4(uchar add4,uchar dat4)
 {
     digitalWrite(Max7219_pinCS, LOW);
-    Write_Max7219_byte(add4);
-    Write_Max7219_byte(dat4);
-    digitalWrite(Max7219_pinCLK, HIGH);
-    Write_Max7219_byte(0x00); //片1写入空
+    Write_Max7219_byte(add4); //片4写入地址
+    Write_Max7219_byte(dat4); //片4写入数据
+    Write_Max7219_byte(0x00); //片3写入空
     Write_Max7219_byte(0x00);
     Write_Max7219_byte(0x00); //片2写入空
     Write_Max7219_byte(0x00);
-    Write_Max7219_byte(0x00); //片3写入空
+    Write_Max7219_byte(0x00); //片1写入空
     Write_Max7219_byte(0x00);
     digitalWrite(Max7219_pinCS, HIGH);
 }
@@ -342,7 +351,7 @@ void make_table_h1(uchar h1)
 		}
 	}
 }
-//向二进制码表写入时的各位
+//向二进制码表写入时的个位
 void make_table_h2(uchar h2)
 {
 	int i,j;
@@ -634,7 +643,7 @@ void loop()
     for (size_t i = 1; i < 9; i++)
     {
         Write_Max7219_1(i, max7219_4[i-1]);
-        Write_Max7219_2(i, 0x00);
+        Write_Max7219_2(i, max7219_3[i-1]);
         Write_Max7219_3(i, max7219_2[i-1]);
         Write_Max7219_4(i, max7219_1[i-1]);
     }
