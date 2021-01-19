@@ -4,8 +4,8 @@
 
 
 //定义Max7219端口
-#define Max7219_pinCLK 2
-#define Max7219_pinCS  0
+#define Max7219_pinCLK 16
+#define Max7219_pinCS  5
 #define Max7219_pinDIN 4
 
 
@@ -77,59 +77,55 @@ void Write_Max7219_byte(uchar DATA)
 void Write_Max7219_1(uchar add1,uchar dat1)
 { 
     digitalWrite(Max7219_pinCS, LOW);
-    Write_Max7219_byte(add1);           //写入地址，即数码管编号
-    Write_Max7219_byte(dat1);               //写入数据，即数码管显示数字 
+    Write_Max7219_byte(0x00); //片4写入空
+    Write_Max7219_byte(0x00);
+    Write_Max7219_byte(0x00); //片3写入空
+    Write_Max7219_byte(0x00);
+    Write_Max7219_byte(0x00); //片2写入空
+    Write_Max7219_byte(0x00);
+    Write_Max7219_byte(add1); //片1写入地址，即数码管编号
+    Write_Max7219_byte(dat1); //片1写入数据，即数码管显示数字 
     digitalWrite(Max7219_pinCS, HIGH);                        
 }
-
-/*
-//向下翻页
-void down(uchar add1,uchar dat1)
-{
-    Write_Max7219_1()
-  
-}
-*/
-
 /*第二片MAX7219的写入数据*/
 void Write_Max7219_2(uchar add2,uchar dat2)
 {
     digitalWrite(Max7219_pinCS, LOW);
-    Write_Max7219_byte(add2);
+    Write_Max7219_byte(0x00); //片4写入空
+    Write_Max7219_byte(0x00);
+    Write_Max7219_byte(0x00); //片3写入空
+    Write_Max7219_byte(0x00);
+    Write_Max7219_byte(add2); //片2写入
     Write_Max7219_byte(dat2);
-    digitalWrite(Max7219_pinCLK, HIGH);
     Write_Max7219_byte(0x00);  //片1写入空
     Write_Max7219_byte(0x00);
     digitalWrite(Max7219_pinCS, HIGH);
 }
-
-
 /*第三片MAX7219的写入数据*/
 void Write_Max7219_3(uchar add3,uchar dat3)
 {
     digitalWrite(Max7219_pinCS, LOW);
-    Write_Max7219_byte(add3);
-    Write_Max7219_byte(dat3);
-    digitalWrite(Max7219_pinCLK, HIGH);
-    Write_Max7219_byte(0x00); //片1写入空
+    Write_Max7219_byte(0x00); //片4写入空
     Write_Max7219_byte(0x00);
+    Write_Max7219_byte(add3); //片3写入
+    Write_Max7219_byte(dat3);
     Write_Max7219_byte(0x00); //片2写入空
+    Write_Max7219_byte(0x00);
+    Write_Max7219_byte(0x00); //片1写入空
     Write_Max7219_byte(0x00);
     digitalWrite(Max7219_pinCS, HIGH);
 }
-
 /*第四片MAX7219的写入数据*/
 void Write_Max7219_4(uchar add4,uchar dat4)
 {
     digitalWrite(Max7219_pinCS, LOW);
-    Write_Max7219_byte(add4);
+    Write_Max7219_byte(add4); //片4写入
     Write_Max7219_byte(dat4);
-    digitalWrite(Max7219_pinCLK, HIGH);
-    Write_Max7219_byte(0x00); //片1写入空
+    Write_Max7219_byte(0x00); //片3写入空
     Write_Max7219_byte(0x00);
     Write_Max7219_byte(0x00); //片2写入空
     Write_Max7219_byte(0x00);
-    Write_Max7219_byte(0x00); //片3写入空
+    Write_Max7219_byte(0x00); //片1写入空
     Write_Max7219_byte(0x00);
     digitalWrite(Max7219_pinCS, HIGH);
 }
@@ -142,19 +138,16 @@ void Init_MAX7219(void)
     Write_Max7219_1(0x0b, 0x07);       //扫描界限；8个数码管显示
     Write_Max7219_1(0x0c, 0x01);       //掉电模式：0，普通模式：1
     Write_Max7219_1(0x0f, 0x00);       //显示测试：1；测试结束，正常显示：0
-
     Write_Max7219_2(0x09, 0x00);       //译码方式：BCD码
     Write_Max7219_2(0x0a, 0x0f);       //亮度 
     Write_Max7219_2(0x0b, 0x07);       //扫描界限；8个数码管显示
     Write_Max7219_2(0x0c, 0x01);       //掉电模式：0，普通模式：1
     Write_Max7219_2(0x0f, 0x00);       //显示测试：1；测试结束，正常显示：0
-
     Write_Max7219_3(0x09, 0x00);       //译码方式：BCD码
     Write_Max7219_3(0x0a, 0x0f);       //亮度 
     Write_Max7219_3(0x0b, 0x07);       //扫描界限；8个数码管显示
     Write_Max7219_3(0x0c, 0x01);       //掉电模式：0，普通模式：1
     Write_Max7219_3(0x0f, 0x00);       //显示测试：1；测试结束，正常显示：0
-
     Write_Max7219_4(0x09, 0x00);       //译码方式：BCD码
     Write_Max7219_4(0x0a, 0x0f);       //亮度 
     Write_Max7219_4(0x0b, 0x07);       //扫描界限；8个数码管显示

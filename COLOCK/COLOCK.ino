@@ -8,17 +8,19 @@
 #define Max7219_pinCS  3
 #define Max7219_pinDIN 2
 //定义ds1302接口
-#define ce 5
+#define ce 7
 #define io 6
-#define clk 7
+#define clk 5
 //定义温湿度传感器
-int pinDHT22 = 8;
+int pinDHT22 = 9;
 //SimpleDHT22 dht22(pinDHT22);
+//定义环境光传感器
+#define ambient_light 8
 
 //ds1302相关变量定义
 unsigned char add_write[] = {0x8C,0x8A,0x88,0x86,0x84,0x82,0x80};//年星月日时分秒
 unsigned char add_read[] = {0x8D,0x8B,0x89,0x87,0x85,0x83,0x81};
-unsigned char tim0[] = {20,1,12,28,16,25,0};
+unsigned char tim0[] = {20,1,12,31,22,45,0};
 unsigned char tim_bcd[7];
 unsigned char tim[14];
 
@@ -206,6 +208,104 @@ void clear_max()
         Write_Max7219_4(i, 0x00);
     }    
 }
+//map日期数据
+void map_date()
+{
+    int n;
+    for (size_t i = 0; i < 7; i++)
+    {
+        for (size_t j = 0; j < 4; j++)
+        {
+            if (tim[4] == 0x01)
+            {
+                time_table[i][j] = number1[1][i][j];
+            }
+            else
+            {
+                time_table[i][j] = 0;
+            }
+        }
+        n = 0;
+        for (size_t j = 4; j < 8; j++)
+        {
+            time_table[i][j] = number1[tim[5]][i][n];
+            n++;
+        }
+        time_table[3][9] = 1;
+        time_table[3][10] = 1;
+        n = 0;
+        for (size_t j = 12; j < 16; j++)
+        {
+            time_table[i][j] = number1[tim[6]][i][n];
+            n++;
+        }
+        n = 0;
+        for (size_t j = 17; j < 21; j++)
+        {
+            time_table[i][j] = number1[tim[7]][i][n];
+            n++;
+        }
+        time_table[6][22] = 1;
+        time_table[6][23] = 1;
+        n = 0;
+        for (size_t j = 25; j < 29; j++)
+        {
+            if (tim[3] != 0x07)
+            {
+                time_table[i][j] = number1[tim_bcd[1]][i][n];
+            }
+            else
+            {
+                time_table[i][j] = number1[8][i][n];
+            }
+            n++;
+        }
+    }
+}
+//显示日期数据
+void display_date()
+{
+    int n = 9;
+    /*
+    uchar max1[8], max2[8], max3[8], max4[8];
+    for (size_t i = 0; i < 8; i++)
+    {
+        max1[i] = max7219_1[i];
+        max2[i] = max7219_2[i];
+        max3[i] = max7219_3[i];
+        max4[i] = max7219_4[i];
+    }*/
+    for (size_t i = 0; i < 9; i++)
+    {
+        for (size_t j = 1; j < 9; j++)
+        {
+            if (j<=n)
+            {
+                Write_Max7219_1(j, 0x00);
+                Write_Max7219_2(j, 0x00);
+                Write_Max7219_3(j, 0x00);
+                Write_Max7219_4(j, 0x00);
+            }
+            else
+            {
+                Write_Max7219_1(j,max7219_4[8-j]);
+                Write_Max7219_2(j,max7219_3[8-j]);
+                Write_Max7219_3(j,max7219_2[8-j]);
+                Write_Max7219_4(j,max7219_1[8-j]);
+            }
+        }
+        n = n - 1;
+        delay(50);
+    }
+    /*
+    for (size_t i = 1; i < 9; i++)
+    {
+        Write_Max7219_1(i, max7219_4[i-1]);
+        Write_Max7219_2(i, max7219_3[i-1]);
+        Write_Max7219_3(i, max7219_2[i-1]);
+        Write_Max7219_4(i, max7219_1[i-1]);
+    }*/
+}
 //单个点阵上字符下滑
 void down(uchar data)
 {
@@ -336,6 +436,17 @@ void down(uchar data)
 //-------------------------------------------7219程序段---------------------------------------//
 
 //-----------------------------------------数据变换程序段--------------------------------------//
+//map清空
+void clear_time_table()
+{
+    for (size_t i = 0; i < 8; i++)
+    {
+        for (size_t j = 0; j < 32; j++)
+        {
+            time_table[i][j] = 0;
+        }
+    }
+}
 //向二进制码表写入时的十位
 void make_table_h1(uchar h1)
 {
@@ -344,7 +455,7 @@ void make_table_h1(uchar h1)
 	for(i=0;i<7;i++)
 	{
 		n = 0;
-		for(j=0;j<4;j++)
+		for(j=1;j<5;j++)
 		{
 			time_table[i][j] = number1[h1][i][n];
 			n = n + 1;
@@ -359,7 +470,7 @@ void make_table_h2(uchar h2)
 	for(i=0;i<7;i++)
 	{
 		n = 0;
-		for(j=5;j<9;j++)
+		for(j=6;j<10;j++)
 		{
 			time_table[i][j] = number1[h2][i][n];
 			n = n + 1;
@@ -374,7 +485,7 @@ void make_table_m1(uchar m1)
 	for(i=0;i<7;i++)
 	{
 		n = 0;
-		for(j=14;j<18;j++)
+		for(j=13;j<17;j++)
 		{
 			time_table[i][j] = number1[m1][i][n];
 			n = n + 1;
@@ -389,7 +500,7 @@ void make_table_m2(uchar m2)
 	for(i=0;i<7;i++)
 	{
 		n = 0;
-		for(j=19;j<23;j++)
+		for(j=18;j<22;j++)
 		{
 			time_table[i][j] = number1[m2][i][n];
 			n = n + 1;
@@ -405,7 +516,7 @@ void make_table_s1(uchar s1)
 	for(i=2;i<7;i++)
 	{
 		n = 0;
-		for(j=25;j<28;j++)
+		for(j=24;j<27;j++)
 		{
 			time_table[i][j] = number2[s1][m][n];
 			n = n + 1;
@@ -422,7 +533,7 @@ void make_table_s2(uchar s2)
 	for(i=2;i<7;i++)
 	{
 		n = 0;
-		for(j=29;j<32;j++)
+		for(j=28;j<31;j++)
 		{
 			time_table[i][j] = number2[s2][m][n];
 			n = n + 1;
@@ -544,59 +655,17 @@ void read_1302_time()
         tim[2*i+1] = tim_bcd[i]%16;
     }
 }
-//串口显示时间函数
-void display_ds1302time()
-{
-    Serial.print("20");
-    Serial.print(tim[0]);
-    Serial.print(tim[1]);
-    Serial.print("年");
-    Serial.print(tim[4]);
-    Serial.print(tim[5]);
-    Serial.print("月");
-    Serial.print(tim[6]);
-    Serial.print(tim[7]);
-    Serial.print("日  ");
-    Serial.print(tim[8]);
-    Serial.print(tim[9]);
-    Serial.print("时");
-    Serial.print(tim[10]);
-    Serial.print(tim[11]);
-    Serial.print("分");
-    Serial.print(tim[12]);
-    Serial.print(tim[13]);
-    Serial.print("秒");
-    Serial.print("  星期");
-    switch (tim[3])
-    {
-    case 1:
-        Serial.print("一");
-        break;
-    case 2:
-        Serial.print("二");
-        break;
-    case 3:
-        Serial.print("三");
-        break;
-    case 4:
-        Serial.print("四");
-        break;
-    case 5:
-        Serial.print("五");
-        break;
-    case 6:
-        Serial.print("六");
-        break;
-    case 7:
-        Serial.print("日");
-        break;
-    default:
-        break;
-    }
-    //Serial.print(tim[3]);
-    Serial.println(" ");
-}
 //----------------------------------------DS1302程序段---------------------------------------//
+
+//----------------------------------------temt6000程序段-------------------------------------//
+int Check_Ambient_light()
+{
+    int am_light;
+    am_light = analogRead(ambient_light);
+    return am_light;
+}
+
+//----------------------------------------temt6000程序段-------------------------------------//
 
  //硬件初始化
 void setup()
@@ -606,17 +675,14 @@ void setup()
     pinMode(Max7219_pinCS, OUTPUT);
     pinMode(Max7219_pinCLK, OUTPUT);
     pinMode(Max7219_pinDIN, OUTPUT);
-    pinMode(clk,OUTPUT);
-    pinMode(ce,OUTPUT);  
+    pinMode(clk, OUTPUT);
+    pinMode(ce, OUTPUT);  
     pinMode(io, INPUT);
+    pinMode(ambient_light, INPUT);
     delay(50);
     Init_MAX7219();
     //DS1302及时间map初始化
     //ds1302_initial();
-    time_table[1][11] = 1;
-    time_table[2][11] = 1;
-    time_table[4][11] = 1;
-    time_table[5][11] = 1;
 }
 
 /******************************************主程序******************************************/
@@ -624,9 +690,9 @@ void loop()
 {
     int n = 0;
     uchar hour_1, hour_2, min_1, min_2, sec_1, sec_2;
-    uchar old_hour_1, old_hour_2, old_min_1, old_min_2, old_sec_1, old_sec_2; 
+    uchar old_hour_1, old_hour_2, old_min_1, old_min_2, old_sec_1, old_sec_2;
+    int amb_light; 
     read_1302_time();
-    display_ds1302time();
     old_hour_1 = tim[8];
     old_hour_2 = tim[9];
     old_min_1 = tim[10];
@@ -639,7 +705,13 @@ void loop()
     make_table_m2(old_min_2);
     make_table_s1(old_sec_1);
     make_table_s2(old_sec_2);
+    time_table[1][11] = 1;
+    time_table[2][11] = 1;
+    time_table[4][11] = 1;
+    time_table[5][11] = 1;
     transform();
+    amb_light = Check_Ambient_light();
+    Serial.println(amb_light);
     for (size_t i = 1; i < 9; i++)
     {
         Write_Max7219_1(i, max7219_4[i-1]);
@@ -647,61 +719,15 @@ void loop()
         Write_Max7219_3(i, max7219_2[i-1]);
         Write_Max7219_4(i, max7219_1[i-1]);
     }
-    /*while(1)
-    {   
-        n = n + 1;
-        Write_Max7219_1(0x01, 0x00);
-        uchar i;
-        read_1302_time();
-        hour_1 = tim[8];
-        hour_2 = tim[9];
-        min_1 = tim[10];
-        min_2 = tim[11];
-        sec_1 = tim[12];
-        sec_2 = tim[13];
-        if(old_hour_1 != hour_1)
-        {
-            old_hour_1 = hour_1;
-            make_table_h1(old_hour_1);
-        }
-        if(old_hour_2 != hour_2)
-        {
-            old_hour_2 = hour_2;
-            make_table_h2(hour_2);
-        }
-        if(old_min_1 != min_1)
-        {
-            old_min_1 = min_1;
-            make_table_m1(min_1);
-        }
-        if(old_min_2 != min_2)
-        {
-            old_min_2 = min_2;
-            make_table_m2(min_2);
-        }
-        if(old_sec_1 != sec_1)
-        {
-            old_sec_1 = sec_1;
-            make_table_s1(old_sec_1);
-        }
-        if(old_sec_2 != sec_2)
-        {
-            old_sec_2 = sec_2;
-            make_table_s2(old_sec_2);
-        }
+    if (tim_bcd[6] == 0x30)
+    {
+        clear_time_table();
+        map_date();
         transform();
-        for (size_t i = 1; i < 9; i++)
-        {
-            Write_Max7219_1(i, max7219_1[i-1]);
-            Write_Max7219_2(i, max7219_2[i-1]);
-            Write_Max7219_3(i, max7219_3[i-1]);
-            Write_Max7219_4(i, max7219_4[i-1]);
-        }
-        if (n == 50)
-        {
-            clear_max();
-            delay(500);
-            n = 0;
-        }
-    }*/
+        clear_max();
+        display_date();
+        delay(5000);
+        clear_time_table();
+    }
+    
 }
