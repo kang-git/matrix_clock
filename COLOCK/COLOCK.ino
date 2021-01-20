@@ -15,7 +15,7 @@
 int pinDHT22 = 9;
 //SimpleDHT22 dht22(pinDHT22);
 //定义环境光传感器
-#define ambient_light 8
+#define ambient_light A7
 
 //ds1302相关变量定义
 unsigned char add_write[] = {0x8C,0x8A,0x88,0x86,0x84,0x82,0x80};//年星月日时分秒
@@ -197,6 +197,14 @@ void Init_MAX7219(void)
     Write_Max7219_4(0x0c, 0x01);       //掉电模式：0，普通模式：1
     Write_Max7219_4(0x0f, 0x00);       //显示测试：1；测试结束，正常显示：0
 }
+//亮度调节
+void brightess(uchar bright)
+{
+    Write_Max7219_1(0x0a, bright);       //亮度 
+    Write_Max7219_2(0x0a, bright);       //亮度 
+    Write_Max7219_3(0x0a, bright);       //亮度 
+    Write_Max7219_4(0x0a, bright);       //亮度 
+}
 //清屏
 void clear_max()
 {
@@ -262,49 +270,32 @@ void map_date()
         }
     }
 }
-//显示日期数据
+//显示日期数据 | 函数功能为上滑显示一副8*32的静态像素画面
 void display_date()
 {
-    int n = 9;
-    /*
-    uchar max1[8], max2[8], max3[8], max4[8];
-    for (size_t i = 0; i < 8; i++)
+    int n = 8;
+    int t;
+    for (size_t i = 0; i < 9; i++)//共9帧画面，每一帧画面30m秒
     {
-        max1[i] = max7219_1[i];
-        max2[i] = max7219_2[i];
-        max3[i] = max7219_3[i];
-        max4[i] = max7219_4[i];
-    }*/
-    for (size_t i = 0; i < 9; i++)
-    {
-        for (size_t j = 1; j < 9; j++)
+        for (size_t j = 1; j <= n; j++)
         {
-            if (j<=n)
-            {
-                Write_Max7219_1(j, 0x00);
-                Write_Max7219_2(j, 0x00);
-                Write_Max7219_3(j, 0x00);
-                Write_Max7219_4(j, 0x00);
-            }
-            else
-            {
-                Write_Max7219_1(j,max7219_4[8-j]);
-                Write_Max7219_2(j,max7219_3[8-j]);
-                Write_Max7219_3(j,max7219_2[8-j]);
-                Write_Max7219_4(j,max7219_1[8-j]);
-            }
+            Write_Max7219_1(j, 0x00);
+            Write_Max7219_2(j, 0x00);
+            Write_Max7219_3(j, 0x00);
+            Write_Max7219_4(j, 0x00);
+        }
+        t = n;
+        for (size_t k = 1; k < 8-n; k++)
+        {
+            Write_Max7219_1(t+1, max7219_4[k-1]);
+            Write_Max7219_2(t+1, max7219_3[k-1]);
+            Write_Max7219_3(t+1, max7219_2[k-1]);
+            Write_Max7219_4(t+1, max7219_1[k-1]);
+            t++;
         }
         n = n - 1;
-        delay(50);
+        delay(20);
     }
-    /*
-    for (size_t i = 1; i < 9; i++)
-    {
-        Write_Max7219_1(i, max7219_4[i-1]);
-        Write_Max7219_2(i, max7219_3[i-1]);
-        Write_Max7219_3(i, max7219_2[i-1]);
-        Write_Max7219_4(i, max7219_1[i-1]);
-    }*/
 }
 //单个点阵上字符下滑
 void down(uchar data)
@@ -312,6 +303,7 @@ void down(uchar data)
     uchar i,j;
     uchar dat[8];
     uchar transfor;
+
     delay(50);
     Init_MAX7219();  
     while(1)
@@ -711,7 +703,38 @@ void loop()
     time_table[5][11] = 1;
     transform();
     amb_light = Check_Ambient_light();
-    Serial.println(amb_light);
+    if (amb_light >= 0 && amb_light < 60)
+    {
+        brightess(0x01);
+    }
+    else if(amb_light >= 80 && amb_light < 130)
+    {
+        brightess(0x03);
+    }
+    else if(amb_light >= 150 && amb_light < 200)
+    {
+        brightess(0x05);
+    }
+    else if(amb_light >= 220 && amb_light < 270)
+    {
+        brightess(0x07);
+    }
+    else if(amb_light >= 290 && amb_light < 340)
+    {
+        brightess(0x09);
+    }
+    else if(amb_light >= 360 && amb_light < 410)
+    {
+        brightess(0x0B);
+    }
+    else if(amb_light >= 430 && amb_light < 480)
+    {
+        brightess(0x0D);
+    }
+    else if(amb_light >= 500 && amb_light < 1000)
+    {
+        brightess(0x0f);
+    }
     for (size_t i = 1; i < 9; i++)
     {
         Write_Max7219_1(i, max7219_4[i-1]);
@@ -726,7 +749,7 @@ void loop()
         transform();
         clear_max();
         display_date();
-        delay(5000);
+        delay(4500);
         clear_time_table();
     }
     
