@@ -271,7 +271,7 @@ void map_date()
     }
 }
 //显示日期数据 | 函数功能为上滑显示一副8*32的静态像素画面
-void display_date()
+void slideup_display()
 {
     int n = 8;
     int t;
@@ -295,6 +295,38 @@ void display_date()
         }
         n = n - 1;
         delay(20);
+    }
+}
+//map年份
+void map_year()
+{
+    int n;
+    for (size_t i = 0; i < 7; i++)
+    {
+        n = 0;
+        for (size_t j = 7; j < 11; j++)
+        {
+            time_table[i][j] = number1[2][i][n];
+            n++;
+        }
+        n = 0;
+        for (size_t j = 12; j < 16; j++)
+        {
+            time_table[i][j] = number1[0][i][n];
+            n++;
+        }
+        n = 0;
+        for (size_t j = 17; j < 21; j++)
+        {
+            time_table[i][j] = number1[tim[0]][i][n];
+            n++;
+        }
+        n = 0;
+        for (size_t j = 22; j < 26; j++)
+        {
+            time_table[i][j] = number1[tim[1]][i][n];
+            n++;
+        }
     }
 }
 //单个点阵上字符下滑
@@ -702,6 +734,7 @@ void loop()
     time_table[4][11] = 1;
     time_table[5][11] = 1;
     transform();
+    //zi动调光程序段
     amb_light = Check_Ambient_light();
     if (amb_light >= 0 && amb_light < 60)
     {
@@ -742,15 +775,34 @@ void loop()
         Write_Max7219_3(i, max7219_2[i-1]);
         Write_Max7219_4(i, max7219_1[i-1]);
     }
+    //每分钟30秒时开始轮播年份日期
     if (tim_bcd[6] == 0x30)
     {
+        clear_time_table();
+        map_year();
+        transform();
+        clear_max();
+        slideup_display();
+        delay(2000);
         clear_time_table();
         map_date();
         transform();
         clear_max();
-        display_date();
-        delay(4500);
+        slideup_display();
+        delay(4000);
         clear_time_table();
+        make_table_h1(old_hour_1);
+        make_table_h2(old_hour_2);
+        make_table_m1(old_min_1);
+        make_table_m2(old_min_2);
+        make_table_s1(old_sec_1);
+        make_table_s2(old_sec_2);
+        time_table[1][11] = 1;
+        time_table[2][11] = 1;
+        time_table[4][11] = 1;
+        time_table[5][11] = 1;
+        transform();
+        slideup_display();
     }
-    
+    //温湿度显示程序段
 }
