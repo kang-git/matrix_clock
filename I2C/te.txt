@@ -1,0 +1,11 @@
+
+void I2c_start()
+{
+	SDA=1;
+	delay(1);
+	SCL=1;
+	delay(1);		//ÑÓ³ÙÖÁÉÙ4.7us
+	SDA=0;
+	delay(1);		//±£³ÖÊ±¼ä>4us
+	SCL=0;
+	delay(1);

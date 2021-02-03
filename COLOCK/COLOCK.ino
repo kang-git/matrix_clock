@@ -20,7 +20,7 @@ int pinDHT22 = 9;
 //ds1302相关变量定义
 unsigned char add_write[] = {0x8C,0x8A,0x88,0x86,0x84,0x82,0x80};//年星月日时分秒
 unsigned char add_read[] = {0x8D,0x8B,0x89,0x87,0x85,0x83,0x81};
-unsigned char tim0[] = {20,1,12,31,22,45,0};
+unsigned char tim0[] = {21,3,2,3,22,53,0};
 unsigned char tim_bcd[7];
 unsigned char tim[14];
 
@@ -220,55 +220,108 @@ void clear_max()
 void map_date()
 {
     int n;
-    for (size_t i = 0; i < 7; i++)
+    n = 0;
+    if (tim[6] != 0)//日是两位
     {
-        for (size_t j = 0; j < 4; j++)
+        for (size_t i = 0; i < 7; i++)
         {
-            if (tim[4] == 0x01)
+            for (size_t j = 0; j < 4; j++)
             {
-                time_table[i][j] = number1[1][i][j];
+                if (tim[4] == 0x01)
+                {
+                    time_table[i][j] = number1[1][i][j];
+                }
+                else
+                {
+                    time_table[i][j] = 0;
+                }
             }
-            else
+            n = 0;
+            for (size_t j = 4; j < 8; j++)
             {
-                time_table[i][j] = 0;
+                time_table[i][j] = number1[tim[5]][i][n];
+                n++;
             }
-        }
-        n = 0;
-        for (size_t j = 4; j < 8; j++)
-        {
-            time_table[i][j] = number1[tim[5]][i][n];
-            n++;
-        }
-        time_table[3][9] = 1;
-        time_table[3][10] = 1;
-        n = 0;
-        for (size_t j = 12; j < 16; j++)
-        {
-            time_table[i][j] = number1[tim[6]][i][n];
-            n++;
-        }
-        n = 0;
-        for (size_t j = 17; j < 21; j++)
-        {
-            time_table[i][j] = number1[tim[7]][i][n];
-            n++;
-        }
-        time_table[6][22] = 1;
-        time_table[6][23] = 1;
-        n = 0;
-        for (size_t j = 25; j < 29; j++)
-        {
-            if (tim[3] != 0x07)
+            time_table[3][9] = 1;
+            time_table[3][10] = 1;
+            n = 0;
+            for (size_t j = 12; j < 16; j++)
             {
-                time_table[i][j] = number1[tim_bcd[1]][i][n];
+                time_table[i][j] = number1[tim[6]][i][n];
+                n++;
             }
-            else
+            n = 0;
+            for (size_t j = 17; j < 21; j++)
             {
-                time_table[i][j] = number1[8][i][n];
+                time_table[i][j] = number1[tim[7]][i][n];
+                n++;
             }
-            n++;
+            time_table[6][22] = 1;
+            time_table[6][23] = 1;
+            n = 0;
+            for (size_t j = 25; j < 29; j++)
+            {
+                if (tim[3] != 0x07)
+                {
+                    time_table[i][j] = number1[tim_bcd[1]][i][n];
+                }
+                else
+                {
+                    time_table[i][j] = number1[8][i][n];
+                }
+                n++;
+            }
+        }    
+    }
+    else//日是一位
+    {
+        for (size_t i = 0; i < 7; i++)
+        {
+            n = 0;
+            for (size_t j = 3; j < 7; j++)
+            {
+                if (tim[4] != 0)
+                {
+                    time_table[i][j] = number1[1][i][n];
+                }
+                else
+                {
+                    time_table[i][j] = 0;
+                }
+                n++;
+            }
+            n = 0;
+            for (size_t j = 7; j < 11; j++)
+            {
+                time_table[i][j] = number1[tim[5]][i][n];
+                n++;
+            }
+            time_table[3][12] = 1;
+            time_table[3][13] = 1;
+            n = 0;
+            for (size_t j = 15; j < 19; j++)
+            {
+                time_table[i][j] = number1[tim[7]][i][n];
+                n++;
+            }
+            time_table[6][20] = 1;
+            time_table[6][21] = 1;
+            n = 0;
+            for (size_t j = 23; j < 27; j++)
+            {
+                if (tim[3] != 0x07)
+                {
+                    time_table[i][j] = number1[tim_bcd[1]][i][n];
+                }
+                else
+                {
+                    time_table[i][j] = number1[8][i][n];
+                }
+                n++;
+            }
         }
     }
+    
 }
 //显示日期数据 | 函数功能为上滑显示一副8*32的静态像素画面
 void slideup_display()
@@ -699,14 +752,16 @@ void setup()
     pinMode(Max7219_pinCS, OUTPUT);
     pinMode(Max7219_pinCLK, OUTPUT);
     pinMode(Max7219_pinDIN, OUTPUT);
+    Init_MAX7219();
+    //DS1302初始化
     pinMode(clk, OUTPUT);
     pinMode(ce, OUTPUT);  
     pinMode(io, INPUT);
-    pinMode(ambient_light, INPUT);
-    delay(50);
-    Init_MAX7219();
     //DS1302及时间map初始化
     //ds1302_initial();
+    //环境光传感器初始化
+    pinMode(ambient_light, INPUT);
+    delay(50);
 }
 
 /******************************************主程序******************************************/
@@ -723,7 +778,10 @@ void loop()
     old_min_2 = tim[11];
     old_sec_1 = tim[12];
     old_sec_2 = tim[13];
-    make_table_h1(old_hour_1);
+    if (old_hour_1)
+    {
+        make_table_h1(old_hour_1);
+    }
     make_table_h2(old_hour_2);
     make_table_m1(old_min_1);
     make_table_m2(old_min_2);
@@ -778,20 +836,26 @@ void loop()
     //每分钟30秒时开始轮播年份日期
     if (tim_bcd[6] == 0x30)
     {
+        //显示年份两秒
         clear_time_table();
         map_year();
         transform();
         clear_max();
         slideup_display();
         delay(2000);
+        //显示月日星期4秒
         clear_time_table();
         map_date();
         transform();
         clear_max();
         slideup_display();
         delay(4000);
+        //清屏上滑恢复时间显示
         clear_time_table();
-        make_table_h1(old_hour_1);
+        if (old_hour_1)
+        {
+            make_table_h1(old_hour_1);
+        }
         make_table_h2(old_hour_2);
         make_table_m1(old_min_1);
         make_table_m2(old_min_2);
