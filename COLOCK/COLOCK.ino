@@ -1,3 +1,6 @@
+#include <Wire.h>
+#include <Thinary_AHT10.h>
+#include <avr/pgmspace.h>
 
 //变量类型名简化
 #define uchar unsigned char
@@ -12,62 +15,22 @@
 #define io 6
 #define clk 5
 //定义温湿度传感器
-int pinDHT22 = 9;
-//SimpleDHT22 dht22(pinDHT22);
+AHT10Class AHT10;
+
 //定义环境光传感器
 #define ambient_light A7
 
 //ds1302相关变量定义
-unsigned char add_write[] = {0x8C,0x8A,0x88,0x86,0x84,0x82,0x80};//年星月日时分秒
-unsigned char add_read[] = {0x8D,0x8B,0x89,0x87,0x85,0x83,0x81};
-unsigned char tim0[] = {21,3,2,3,22,53,0};
-unsigned char tim_bcd[7];
-unsigned char tim[14];
+const uchar add_write[] = {0x8C,0x8A,0x88,0x86,0x84,0x82,0x80};//年星月日时分秒
+const uchar add_read[] = {0x8D,0x8B,0x89,0x87,0x85,0x83,0x81};
+uchar tim0[] = {21,3,2,3,22,53,0};
+uchar tim_bcd[7];
+uchar tim[14];
 
 //max7219相关变量定义
 int time_table[8][32];
-uchar disp1[38][8]={
-{0x3C,0x24,0x24,0x24,0x24,0x24,0x3C,0x00},//0
-{0x08,0x08,0x08,0x08,0x08,0x08,0x08,0x00},//1
-{0x3C,0x04,0x04,0x3C,0x20,0x20,0x3C,0x00},//2
-{0x3C,0x04,0x04,0x3C,0x04,0x04,0x3C,0x00},//3
-{0x24,0x24,0x24,0x3C,0x04,0x04,0x04,0x00},//4
-{0x3C,0x20,0x20,0x3C,0x04,0x04,0x3C,0x00},//5
-{0x3C,0x20,0x20,0x3C,0x24,0x24,0x3C,0x00},//6
-{0x3C,0x04,0x04,0x04,0x04,0x04,0x04,0x00},//7
-{0x3C,0x24,0x24,0x3C,0x24,0x24,0x3C,0x00},//8
-{0x3C,0x24,0x24,0x3C,0x04,0x04,0x3C,0x00},//9
-{0x8,0x14,0x22,0x3E,0x22,0x22,0x22,0x22},//A
-{0x3C,0x22,0x22,0x3E,0x22,0x22,0x3C,0x0},//B
-{0x3C,0x40,0x40,0x40,0x40,0x40,0x3C,0x0},//C
-{0x7C,0x42,0x42,0x42,0x42,0x42,0x7C,0x0},//D
-{0x7C,0x40,0x40,0x7C,0x40,0x40,0x40,0x7C},//E
-{0x7C,0x40,0x40,0x7C,0x40,0x40,0x40,0x40},//F
-{0x3C,0x40,0x40,0x40,0x40,0x44,0x44,0x3C},//G
-{0x44,0x44,0x44,0x7C,0x44,0x44,0x44,0x44},//H
-{0x7C,0x10,0x10,0x10,0x10,0x10,0x10,0x7C},//I
-{0x3C,0x8,0x8,0x8,0x8,0x8,0x48,0x30},//J
-{0x0,0x24,0x28,0x30,0x20,0x30,0x28,0x24},//K
-{0x40,0x40,0x40,0x40,0x40,0x40,0x40,0x7C},//L
-{0x81,0xC3,0xA5,0x99,0x81,0x81,0x81,0x81},//M
-{0x0,0x42,0x62,0x52,0x4A,0x46,0x42,0x0},//N
-{0x3C,0x42,0x42,0x42,0x42,0x42,0x42,0x3C},//O
-{0x3C,0x22,0x22,0x22,0x3C,0x20,0x20,0x20},//P
-{0x1C,0x22,0x22,0x22,0x22,0x26,0x22,0x1D},//Q
-{0x3C,0x22,0x22,0x22,0x3C,0x24,0x22,0x21},//R
-{0x0,0x1E,0x20,0x20,0x3E,0x2,0x2,0x3C},//S
-{0x0,0x3E,0x8,0x8,0x8,0x8,0x8,0x8},//T
-{0x42,0x42,0x42,0x42,0x42,0x42,0x22,0x1C},//U
-{0x42,0x42,0x42,0x42,0x42,0x42,0x24,0x18},//V
-{0x0,0x49,0x49,0x49,0x49,0x2A,0x1C,0x0},//W
-{0x0,0x41,0x22,0x14,0x8,0x14,0x22,0x41},//X
-{0x41,0x22,0x14,0x8,0x8,0x8,0x8,0x8},//Y
-{0x0,0x7F,0x2,0x4,0x8,0x10,0x20,0x7F},//Z
-{0x8,0x7F,0x49,0x49,0x7F,0x8,0x8,0x8},//中
-{0xFE,0xBA,0x92,0xBA,0x92,0x9A,0xBA,0xFE},//国
-};
 //大号数字
-int number1[10][7][5] = {
+const int number1[10][7][5] = {
 	{{1,1,1,1},{1,0,0,1},{1,0,0,1},{1,0,0,1},{1,0,0,1},{1,0,0,1},{1,1,1,1}},	//0
 	{{0,0,1,0},{0,0,1,0},{0,0,1,0},{0,0,1,0},{0,0,1,0},{0,0,1,0},{0,0,1,0}},	//1
 	{{1,1,1,1},{0,0,0,1},{0,0,0,1},{1,1,1,1},{1,0,0,0},{1,0,0,0},{1,1,1,1}},	//2
@@ -80,7 +43,7 @@ int number1[10][7][5] = {
 	{{1,1,1,1},{1,0,0,1},{1,0,0,1},{1,1,1,1},{0,0,0,1},{0,0,0,1},{1,1,1,1}}		//9
 };
 //小号数字
-int number2[10][5][3] = {
+const int number2[10][5][3] PROGMEM = {
 	{{1,1,1},{1,0,1},{1,0,1},{1,0,1},{1,1,1}},	//0
 	{{0,1,0},{0,1,0},{0,1,0},{0,1,0},{0,1,0}},	//1
 	{{1,1,1},{0,0,1},{1,1,1},{1,0,0},{1,1,1}},	//2
@@ -90,13 +53,14 @@ int number2[10][5][3] = {
 	{{1,1,1},{1,0,0},{1,1,1},{1,0,1},{1,1,1}},	//6
 	{{1,1,1},{0,0,1},{0,0,1},{0,0,1},{0,0,1}},	//7
 	{{1,1,1},{1,0,1},{1,1,1},{1,0,1},{1,1,1}},	//8
-	{{1,1,1},{1,0,1},{1,1,1},{0,0,1},{1,1,1}},	//9	
+	{{1,1,1},{1,0,1},{1,1,1},{0,0,1},{1,1,1}}	//9	
 };
+
 //点阵码表
-uchar max7219_1[8];
-uchar max7219_2[8];
-uchar max7219_3[8];
-uchar max7219_4[8];
+uchar *max7219_1 = new uchar[8];
+uchar *max7219_2 = new uchar[8];
+uchar *max7219_3 = new uchar[8];
+uchar *max7219_4 = new uchar[8];
 
 
 //--------------------------------------------7219子程序-------------------------------------//
@@ -215,6 +179,20 @@ void clear_max()
         Write_Max7219_3(i, 0x00);
         Write_Max7219_4(i, 0x00);
     }    
+}
+//-------------------------------------------7219程序段---------------------------------------//
+
+//-----------------------------------------数据变换程序段--------------------------------------//
+//map清空
+void clear_time_table()
+{
+    for (size_t i = 0; i < 8; i++)
+    {
+        for (size_t j = 0; j < 32; j++)
+        {
+            time_table[i][j] = 0;
+        }
+    }
 }
 //map日期数据
 void map_date()
@@ -382,241 +360,54 @@ void map_year()
         }
     }
 }
-//单个点阵上字符下滑
-void down(uchar data)
+//map时间
+void map_time()
 {
-    uchar i,j;
-    uchar dat[8];
-    uchar transfor;
-
-    delay(50);
-    Init_MAX7219();  
-    while(1)
+    uchar h1, h2, m1, m2;
+    int j;
+    h1 = tim[8];   
+    h2 = tim[9];   
+    m1 = tim[10];   
+    m2 = tim[11];   
+    int n = 0;
+    for (size_t i = 0; i < 7; i++)
     {
-        for(j=0;j<38;j++)
-        {
-            for(i=1;i<9;i++)
-            {
-                Write_Max7219_1(i,disp1[j][i-1]);
-                Write_Max7219_2(i,disp1[j][i-1]);
-                Write_Max7219_3(i,disp1[j][i-1]);
-                Write_Max7219_4(i,disp1[j][i-1]);
-            }
-            delay(300);
-            for(i=1;i<9;i++)
-            {
-                Write_Max7219_1(i, disp1[j][i-1]);
-                Write_Max7219_2(i, disp1[j][i-1]);
-                Write_Max7219_3(i, disp1[j][i-1]);
-                Write_Max7219_4(i, disp1[j][i-1]);
-            }
-            delay(760);
-            for(i=0;i<8;i++)    
-                dat[i] = disp1[j][i];
-            for(i=7;i>0;i--)
-                dat[i] = dat[i-1];
-            dat[0] = 0x00;
-            delay(30);
-            for(i=1;i<9;i++)
-            {
-                Write_Max7219_1(i, dat[i-1]);
-                Write_Max7219_2(i, dat[i-1]);
-                Write_Max7219_3(i, dat[i-1]);
-                Write_Max7219_4(i, dat[i-1]);  
-            }
-            for(i=7;i>0;i--)
-                dat[i] = dat[i-1];
-            dat[0] = 0x00;
-            delay(30);
-            for(i=1;i<9;i++)
-            {
-                Write_Max7219_1(i, dat[i-1]);
-                Write_Max7219_2(i, dat[i-1]);
-                Write_Max7219_3(i, dat[i-1]);
-                Write_Max7219_4(i, dat[i-1]);  
-            }
-            for(i=7;i>0;i--)
-                dat[i] = dat[i-1];
-            dat[1] = dat[0];
-            dat[0] = 0x00;
-            delay(30);
-            for(i=1;i<9;i++)
-            {
-                Write_Max7219_1(i, dat[i-1]);
-                Write_Max7219_2(i, dat[i-1]);
-                Write_Max7219_3(i, dat[i-1]);
-                Write_Max7219_4(i, dat[i-1]);  
-            }
-            for(i=7;i>0;i--)
-                dat[i] = dat[i-1];
-            dat[1] = dat[0];
-            dat[0] = 0x00;
-            delay(30);
-            for(i=1;i<9;i++)
-            {
-                Write_Max7219_1(i, dat[i-1]);
-                Write_Max7219_2(i, dat[i-1]);
-                Write_Max7219_3(i, dat[i-1]);
-                Write_Max7219_4(i, dat[i-1]);  
-            }
-            for(i=7;i>0;i--)
-                dat[i] = dat[i-1];
-            dat[1] = dat[0];
-            dat[0] = 0x00;
-            delay(30);
-            for(i=1;i<9;i++)
-            {
-                Write_Max7219_1(i, dat[i-1]);
-                Write_Max7219_2(i, dat[i-1]);
-                Write_Max7219_3(i, dat[i-1]);
-                Write_Max7219_4(i, dat[i-1]);  
-            }
-            for(i=7;i>0;i--)
-                dat[i] = dat[i-1];
-            dat[1] = dat[0];
-            dat[0] = 0x00;
-            delay(30);
-            for(i=1;i<9;i++)
-            {
-                Write_Max7219_1(i, dat[i-1]);
-                Write_Max7219_2(i, dat[i-1]);
-                Write_Max7219_3(i, dat[i-1]);
-                Write_Max7219_4(i, dat[i-1]);  
-            }
-            for(i=7;i>0;i--)
-                dat[i] = dat[i-1];
-            dat[1] = dat[0];
-            dat[0] = 0x00;
-            delay(30);
-            for(i=1;i<9;i++)
-            {
-                Write_Max7219_1(i, dat[i-1]);
-                Write_Max7219_2(i, dat[i-1]);
-                Write_Max7219_3(i, dat[i-1]);
-                Write_Max7219_4(i, dat[i-1]);  
-            }
-            for(i=7;i>0;i--)
-                dat[i] = dat[i-1];
-            dat[1] = dat[0];
-            dat[0] = 0x00;
-            delay(30);
-            for(i=1;i<9;i++)
-            {
-                Write_Max7219_1(i, dat[i-1]);
-                Write_Max7219_2(i, dat[i-1]);
-                Write_Max7219_3(i, dat[i-1]);
-                Write_Max7219_4(i, dat[i-1]);  
-            }
-        }  
-    } 
-}
-//-------------------------------------------7219程序段---------------------------------------//
-
-//-----------------------------------------数据变换程序段--------------------------------------//
-//map清空
-void clear_time_table()
-{
-    for (size_t i = 0; i < 8; i++)
-    {
-        for (size_t j = 0; j < 32; j++)
-        {
-            time_table[i][j] = 0;
-        }
-    }
-}
-//向二进制码表写入时的十位
-void make_table_h1(uchar h1)
-{
-	int i,j;
-	int n = 0;
-	for(i=0;i<7;i++)
-	{
-		n = 0;
+        n = 0;
 		for(j=1;j<5;j++)
 		{
-			time_table[i][j] = number1[h1][i][n];
+            if (h1)
+            {
+                time_table[i][j] = number1[h1][i][n];
+            }
+            else
+            {
+                time_table[i][j] = 0;
+            }
 			n = n + 1;
 		}
-	}
-}
-//向二进制码表写入时的个位
-void make_table_h2(uchar h2)
-{
-	int i,j;
-	int n = 0;
-	for(i=0;i<7;i++)
-	{
-		n = 0;
+        n = 0;
 		for(j=6;j<10;j++)
 		{
 			time_table[i][j] = number1[h2][i][n];
 			n = n + 1;
 		}
-	}
-}
-//向二进制码表写入分的十位
-void make_table_m1(uchar m1)
-{
-	int i,j;
-	int n = 0;
-	for(i=0;i<7;i++)
-	{
-		n = 0;
+        n = 0;
 		for(j=13;j<17;j++)
 		{
 			time_table[i][j] = number1[m1][i][n];
 			n = n + 1;
 		}
-	}
-}
-//向二进制码表写入分的个位
-void make_table_m2(uchar m2)
-{
-	int i,j;
-	int n = 0;
-	for(i=0;i<7;i++)
-	{
-		n = 0;
+        n = 0;
 		for(j=18;j<22;j++)
 		{
 			time_table[i][j] = number1[m2][i][n];
 			n = n + 1;
 		}
-	}
-}
-//向二进制码表写入秒的十位
-void make_table_s1(uchar s1)
-{
-	int i,j;
-	int m = 0;
-	int n = 0;
-	for(i=2;i<7;i++)
-	{
-		n = 0;
-		for(j=24;j<27;j++)
-		{
-			time_table[i][j] = number2[s1][m][n];
-			n = n + 1;
-		}
-		m = m + 1;
-	}
-}
-//向二进制时间码表写入秒数的个位
-void make_table_s2(uchar s2)
-{
-	int i,j;
-	int m = 0;
-	int n = 0;
-	for(i=2;i<7;i++)
-	{
-		n = 0;
-		for(j=28;j<31;j++)
-		{
-			time_table[i][j] = number2[s2][m][n];
-			n = n + 1;
-		}
-		m = m + 1;
-	}
+    }
+    time_table[1][11] = 1;
+    time_table[2][11] = 1;
+    time_table[4][11] = 1;
+    time_table[5][11] = 1;
 }
 //将二进制点阵码表转换为写入max7219点阵的16进制值
 void transform()
@@ -734,6 +525,259 @@ void read_1302_time()
 }
 //----------------------------------------DS1302程序段---------------------------------------//
 
+//----------------------------------------AHT10程序段---------------------------------------//
+void get_map_Temp()
+{
+    int n = 0;
+    float Temperature;
+    int t1, t2, t3, t4, t5;
+    int m1;
+    Temperature = AHT10.GetTemperature();
+    delay(10);
+    t1 = (int)Temperature/10;
+    t2 = (int)Temperature%10;
+    m1 = Temperature*10;
+    t3 = (int)(m1%100);
+    t4 = (int)Temperature;
+    t5 = (int)(m1%10);
+    if ((int)Temperature >= 10)
+    {
+        for (size_t i = 0; i < 7; i++)
+        {
+            time_table[2][5] = 1;
+            time_table[5][5] = 1;
+            n = 0;
+            for (size_t j = 7; j < 11; j++)
+            {
+                time_table[i][j] = number1[t1][i][n];
+                n++;
+            }
+            n = 0;
+            for (size_t j = 12; j < 16; j++)
+            {
+                time_table[i][j] = number1[t2][i][n];
+                n++;
+            }
+            time_table[6][17] = 1;
+            n = 0;
+            for (size_t j = 19; j < 23; j++)
+            {
+                time_table[i][j] = number1[t3][i][n];
+                n++;
+            }
+            n = 0;
+        }
+        time_table[0][0] = 1;
+        time_table[0][1] = 1;
+        time_table[0][2] = 1;
+        time_table[0][3] = 1;
+        time_table[0][4] = 1;
+        time_table[1][0] = 1;
+        time_table[1][2] = 1;
+        time_table[1][4] = 1;
+        time_table[2][2] = 1;
+        time_table[3][2] = 1;
+        time_table[4][2] = 1;
+        time_table[5][2] = 1;
+        time_table[6][2] = 1;
+        time_table[0][24] = 1;
+        time_table[0][25] = 1;
+        time_table[0][26] = 1;
+        time_table[0][27] = 1;
+        time_table[0][28] = 1;
+        time_table[0][29] = 1;
+        time_table[1][24] = 1;
+        time_table[1][25] = 1;
+        time_table[1][26] = 1;
+        time_table[1][29] = 1;
+        time_table[2][26] = 1;
+        time_table[3][26] = 1;
+        time_table[4][26] = 1;
+        time_table[5][26] = 1;
+        time_table[5][29] = 1;
+        time_table[6][26] = 1;
+        time_table[6][27] = 1;
+        time_table[6][28] = 1;
+        time_table[6][29] = 1;
+    }
+    else
+    {
+        for (size_t i = 0; i < 7; i++)
+        {
+            time_table[2][5] = 1;
+            time_table[5][5] = 1;
+            n = 0;
+            for (size_t j = 7; j < 11; j++)
+            {
+                time_table[i][j] = number1[t4][i][n];
+                n++;
+            }
+            time_table[6][12] = 1;
+            n = 0;
+            for (size_t j = 14; j < 18; j++)
+            {
+                time_table[i][j] = number1[t5][i][n];
+                n++;
+            }
+        }
+        time_table[0][0] = 1;
+        time_table[0][1] = 1;
+        time_table[0][2] = 1;
+        time_table[0][3] = 1;
+        time_table[0][4] = 1;
+        time_table[1][0] = 1;
+        time_table[1][2] = 1;
+        time_table[1][4] = 1;
+        time_table[2][2] = 1;
+        time_table[3][2] = 1;
+        time_table[4][2] = 1;
+        time_table[5][2] = 1;
+        time_table[6][2] = 1;
+        time_table[0][19] = 1;
+        time_table[0][20] = 1;
+        time_table[0][21] = 1;
+        time_table[0][22] = 1;
+        time_table[0][23] = 1;
+        time_table[0][24] = 1;
+        time_table[1][19] = 1;
+        time_table[1][20] = 1;
+        time_table[1][21] = 1;
+        time_table[1][24] = 1;
+        time_table[2][21] = 1;
+        time_table[3][21] = 1;
+        time_table[4][21] = 1;
+        time_table[5][21] = 1;
+        time_table[5][24] = 1;
+        time_table[6][21] = 1;
+        time_table[6][22] = 1;
+        time_table[6][23] = 1;
+        time_table[6][24] = 1;
+    }
+}
+
+void get_map_Humi()
+{
+    int n = 0;
+    float Humidity;
+    Humidity = AHT10.GetHumidity();
+    delay(10);
+    if ((int)Humidity >= 10)
+    {
+        for (size_t i = 0; i < 7; i++)
+        {
+            time_table[2][5] = 1;
+            time_table[5][5] = 1;
+            n = 0;
+            for (size_t j = 7; j < 11; j++)
+            {
+                time_table[i][j] = number1[(int)Humidity/10][i][n];
+                n++;
+            }
+            n = 0;
+            for (size_t j = 12; j < 16; j++)
+            {
+                time_table[i][j] = number1[(int)Humidity%10][i][n];
+                n++;
+            }
+            time_table[6][17] = 1;
+            n = 0;
+            for (size_t j = 19; j < 23; j++)
+            {
+                time_table[i][j] = number1[(int)(Humidity*10)%100][i][n];
+                n++;
+            }
+        }
+        time_table[0][0] = 1;
+        time_table[0][3] = 1;
+        time_table[1][0] = 1;
+        time_table[1][3] = 1;
+        time_table[2][0] = 1;
+        time_table[2][3] = 1;
+        time_table[3][0] = 1;
+        time_table[3][1] = 1;
+        time_table[3][2] = 1;
+        time_table[3][3] = 1;
+        time_table[4][0] = 1;
+        time_table[4][3] = 1;
+        time_table[5][0] = 1;
+        time_table[5][3] = 1;
+        time_table[6][0] = 1;
+        time_table[6][3] = 1;
+        time_table[7][0] = 1;
+        time_table[7][3] = 1;
+        time_table[0][24] = 1;
+        time_table[0][25] = 1;
+        time_table[0][29] = 1;
+        time_table[1][24] = 1;
+        time_table[1][25] = 1;
+        time_table[1][29] = 1;
+        time_table[2][28] = 1;
+        time_table[3][27] = 1;
+        time_table[4][26] = 1;
+        time_table[5][25] = 1;
+        time_table[5][28] = 1;
+        time_table[5][29] = 1;
+        time_table[6][24] = 1;
+        time_table[6][28] = 1;
+        time_table[6][29] = 1;
+    }
+    else
+    {
+        for (size_t i = 0; i < 7; i++)
+        {
+            time_table[2][5] = 1;
+            time_table[5][5] = 1;
+            n = 0;
+            for (size_t j = 7; j < 11; j++)
+            {
+                time_table[i][j] = number1[(int)Humidity][i][n];
+                n++;
+            }
+            time_table[6][12] = 1;
+            n = 0;
+            for (size_t j = 14; j < 18; j++)
+            {
+                time_table[i][j] = number1[(int)(Humidity*10)%10][i][n];
+                n++;
+            }
+        }
+        time_table[0][0] = 1;
+        time_table[0][3] = 1;
+        time_table[1][0] = 1;
+        time_table[1][3] = 1;
+        time_table[2][0] = 1;
+        time_table[2][3] = 1;
+        time_table[3][0] = 1;
+        time_table[3][1] = 1;
+        time_table[3][2] = 1;
+        time_table[3][3] = 1;
+        time_table[4][0] = 1;
+        time_table[4][3] = 1;
+        time_table[5][0] = 1;
+        time_table[5][3] = 1;
+        time_table[6][0] = 1;
+        time_table[6][3] = 1;
+        time_table[7][0] = 1;
+        time_table[7][3] = 1;
+        time_table[0][19] = 1;
+        time_table[0][20] = 1;
+        time_table[0][24] = 1;
+        time_table[1][19] = 1;
+        time_table[1][20] = 1;
+        time_table[1][24] = 1;
+        time_table[2][23] = 1;
+        time_table[3][22] = 1;
+        time_table[4][21] = 1;
+        time_table[5][20] = 1;
+        time_table[5][23] = 1;
+        time_table[5][24] = 1;
+        time_table[6][19] = 1;
+        time_table[6][23] = 1;
+        time_table[6][24] = 1;
+    }
+}
+//----------------------------------------AHT10程序段---------------------------------------//
+
 //----------------------------------------temt6000程序段-------------------------------------//
 int Check_Ambient_light()
 {
@@ -748,6 +792,12 @@ int Check_Ambient_light()
 void setup()
 {
     Serial.begin(9600);
+    //AHT10初始化
+    Wire.begin();
+    if(AHT10.begin(eAHT10Address_Low))
+        Serial.println("Init AHT10 Success.");
+    else
+        Serial.println("Init AHT10 Failure.");
     //max7219初始化
     pinMode(Max7219_pinCS, OUTPUT);
     pinMode(Max7219_pinCLK, OUTPUT);
@@ -759,40 +809,19 @@ void setup()
     pinMode(io, INPUT);
     //DS1302及时间map初始化
     //ds1302_initial();
-    //环境光传感器初始化
+    //环境光传感器temt6000初始化
     pinMode(ambient_light, INPUT);
     delay(50);
 }
 
 /******************************************主程序******************************************/
 void loop()
-{
-    int n = 0;
-    uchar hour_1, hour_2, min_1, min_2, sec_1, sec_2;
-    uchar old_hour_1, old_hour_2, old_min_1, old_min_2, old_sec_1, old_sec_2;
+{   
     int amb_light; 
     read_1302_time();
-    old_hour_1 = tim[8];
-    old_hour_2 = tim[9];
-    old_min_1 = tim[10];
-    old_min_2 = tim[11];
-    old_sec_1 = tim[12];
-    old_sec_2 = tim[13];
-    if (old_hour_1)
-    {
-        make_table_h1(old_hour_1);
-    }
-    make_table_h2(old_hour_2);
-    make_table_m1(old_min_1);
-    make_table_m2(old_min_2);
-    make_table_s1(old_sec_1);
-    make_table_s2(old_sec_2);
-    time_table[1][11] = 1;
-    time_table[2][11] = 1;
-    time_table[4][11] = 1;
-    time_table[5][11] = 1;
+    map_time();
     transform();
-    //zi动调光程序段
+    //自动调光程序段
     amb_light = Check_Ambient_light();
     if (amb_light >= 0 && amb_light < 60)
     {
@@ -826,6 +855,7 @@ void loop()
     {
         brightess(0x0f);
     }
+    //向max7219写入显示信息
     for (size_t i = 1; i < 9; i++)
     {
         Write_Max7219_1(i, max7219_4[i-1]);
@@ -833,10 +863,10 @@ void loop()
         Write_Max7219_3(i, max7219_2[i-1]);
         Write_Max7219_4(i, max7219_1[i-1]);
     }
-    //每分钟30秒时开始轮播年份日期
-    if (tim_bcd[6] == 0x30)
+    //每分钟30秒时开始轮播年份日期并显示温湿度
+    if (tim_bcd[6] == 0x25)
     {
-        //显示年份两秒
+        //显示年份2秒
         clear_time_table();
         map_year();
         transform();
@@ -850,23 +880,22 @@ void loop()
         clear_max();
         slideup_display();
         delay(4000);
+        clear_time_table();
+        get_map_Temp();
+        transform();
+        clear_max();
+        slideup_display();
+        delay(3500);
+        clear_time_table();
+        get_map_Humi();
+        transform();
+        clear_max();
+        slideup_display();
+        delay(3500);
         //清屏上滑恢复时间显示
         clear_time_table();
-        if (old_hour_1)
-        {
-            make_table_h1(old_hour_1);
-        }
-        make_table_h2(old_hour_2);
-        make_table_m1(old_min_1);
-        make_table_m2(old_min_2);
-        make_table_s1(old_sec_1);
-        make_table_s2(old_sec_2);
-        time_table[1][11] = 1;
-        time_table[2][11] = 1;
-        time_table[4][11] = 1;
-        time_table[5][11] = 1;
+        map_time();
         transform();
         slideup_display();
-    }
-    //温湿度显示程序段
+    }    
 }
